@@ -140,13 +140,13 @@ function LabelPreview({ slot }) {
       className="mx-auto h-[34mm] w-[51mm] overflow-hidden rounded-xl border border-slate-300 bg-white p-[2mm] text-black shadow-sm"
       dir="rtl"
     >
-      <div className="flex h-full flex-col justify-between text-right">
+      <div className="flex h-full flex-col text-right">
         <div>
           <div className="truncate text-[16px] font-black leading-tight">{BRAND_NAME}</div>
           <div className="mt-2 truncate text-[15px] font-black leading-tight">{slot.guest.fullName}</div>
           <div className="mt-2 text-[12px] font-black leading-tight">{getSlotLabel(slot)}</div>
         </div>
-        <div>
+        <div className="mt-5">
           <div className="text-[10px] font-bold leading-tight">
             ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
           </div>
@@ -167,7 +167,7 @@ function PrintLabel({ slot }) {
           <div className="print-label-name">{slot.guest.fullName}</div>
           <div className="print-label-slot">{getSlotLabel(slot)}</div>
         </div>
-        <div>
+        <div className="print-label-time-block">
           <div className="print-label-time">
             ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
           </div>

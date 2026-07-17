@@ -114,7 +114,7 @@ select {
     height: 100% !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     gap: 1mm !important;
     text-align: right !important;
     font-family: Tahoma, Arial, sans-serif !important;
@@ -146,6 +146,10 @@ select {
     font-size: 12px !important;
     line-height: 1.1 !important;
     font-weight: 900 !important;
+  }
+
+  .print-label-time-block {
+    margin-top: 6mm !important;
   }
 
   .print-label-time {
