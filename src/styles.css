@@ -112,20 +112,12 @@ select {
     display: flex !important;
     width: 100% !important;
     height: 100% !important;
-    flex-direction: row !important;
+    flex-direction: column !important;
     align-items: stretch !important;
     justify-content: space-between !important;
-    gap: 2mm !important;
+    gap: 1mm !important;
     text-align: right !important;
     font-family: Tahoma, Arial, sans-serif !important;
-  }
-
-  .print-label-text {
-    display: flex !important;
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
   }
 
   .print-label-brand {
@@ -133,48 +125,33 @@ select {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
     line-height: 1.1 !important;
     font-weight: 900 !important;
   }
 
   .print-label-name {
     max-width: 100% !important;
-    margin-top: 1.2mm !important;
+    margin-top: 2mm !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    font-size: 13px !important;
+    font-size: 15px !important;
     line-height: 1.1 !important;
     font-weight: 900 !important;
   }
 
-  .print-label-qr {
-    flex: 0 0 auto !important;
-    width: 17mm !important;
-    height: 17mm !important;
-    margin: auto 0 !important;
-    border: 1px solid black !important;
-    background-color: white !important;
-  }
-
   .print-label-slot {
-    margin-top: 1.2mm !important;
-    font-size: 10px !important;
+    margin-top: 2mm !important;
+    font-size: 12px !important;
     line-height: 1.1 !important;
     font-weight: 900 !important;
   }
 
   .print-label-time {
-    font-size: 8px !important;
+    font-size: 10px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
-  }
-
-  .print-label-barcode {
-    width: 30mm !important;
-    height: 4mm !important;
-    margin-top: 1mm !important;
   }
 
   .no-print {
