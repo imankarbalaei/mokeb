@@ -49,19 +49,7 @@ ipcMain.handle("print-label", async (event) => {
       senderWindow.webContents.print(
         {
           silent: false,
-          printBackground: true,
-          landscape: false,
-          pageSize: {
-            width: 100000,
-            height: 50000
-          },
-          margins: {
-            marginType: "custom",
-            top: 10000,
-            bottom: 0,
-            left: 0,
-            right: 0
-          }
+          printBackground: true
         },
         (success, failureReason) => {
           resolve({

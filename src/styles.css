@@ -62,15 +62,12 @@ select {
 
 @media print {
   @page {
-    size: 100mm 50mm;
     margin: 0;
   }
 
   html,
   body,
   #root {
-    width: 100mm !important;
-    height: 50mm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -96,7 +93,7 @@ select {
   #print-label {
     display: block !important;
     position: fixed !important;
-    top: 10mm !important;
+    top: 0 !important;
     right: 0 !important;
     width: 51mm !important;
     height: 34mm !important;
