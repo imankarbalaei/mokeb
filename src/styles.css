@@ -62,7 +62,8 @@ select {
 
 @media print {
   @page {
-    margin: 0;
+    size: 100mm 50mm;
+    margin: 10mm 0 0 0;
   }
 
   body {

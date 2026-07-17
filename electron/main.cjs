@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain } = require("electron");
 const path = require("path");
 
 app.disableHardwareAcceleration();
@@ -13,6 +13,7 @@ const createWindow = () => {
     backgroundColor: "#f8fafc",
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -37,4 +38,36 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+ipcMain.handle("print-label", async (event) => {
+  const senderWindow = BrowserWindow.fromWebContents(event.sender);
+  if (!senderWindow) return { ok: false, error: "پنجره چاپ پیدا نشد." };
+
+  return new Promise((resolve) => {
+    senderWindow.webContents.print(
+      {
+        silent: false,
+        printBackground: true,
+        landscape: false,
+        pageSize: {
+          width: 100000,
+          height: 50000
+        },
+        margins: {
+          marginType: "custom",
+          top: 10000,
+          bottom: 0,
+          left: 0,
+          right: 0
+        }
+      },
+      (success, failureReason) => {
+        resolve({
+          ok: success,
+          error: success ? null : failureReason
+        });
+      }
+    );
+  });
 });

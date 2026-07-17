@@ -187,6 +187,15 @@ function PrintLabel({ slot }) {
   );
 }
 
+async function printCurrentLabel() {
+  if (window.mokebPrint?.printLabel) {
+    await window.mokebPrint.printLabel();
+    return;
+  }
+
+  window.print();
+}
+
 function SearchResults({ query, results, onOpenSlot }) {
   const normalizedQuery = query.trim();
 
@@ -508,7 +517,7 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
               <div className="grid gap-3 md:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={printCurrentLabel}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 font-black text-white transition hover:bg-slate-800"
                 >
                   <Printer className="h-5 w-5" />
