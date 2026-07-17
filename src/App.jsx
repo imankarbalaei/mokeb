@@ -518,6 +518,72 @@ function MultiCheckInModal({ open, slots, onClose, onSubmit }) {
   );
 }
 
+function LongStayModal({ open, slots, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">لیست زائران</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-900">اقامت بیش از ۲۴ ساعت</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            aria-label="بستن"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {slots.length === 0 ? (
+            <p className="rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200">
+              در حال حاضر زائری با اقامت بیش از ۲۴ ساعت ثبت نشده است.
+            </p>
+          ) : (
+            <div className="max-h-[65vh] overflow-auto rounded-2xl border border-slate-200">
+              <table className="w-full min-w-[780px] text-right text-sm">
+                <thead className="sticky top-0 bg-amber-50 text-amber-800">
+                  <tr>
+                    <th className="px-4 py-3 font-black">نام و نام خانوادگی</th>
+                    <th className="px-4 py-3 font-black">شماره تماس</th>
+                    <th className="px-4 py-3 font-black">جایگاه</th>
+                    <th className="px-4 py-3 font-black">زمان ورود</th>
+                    <th className="px-4 py-3 font-black">مدت اقامت</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {slots.map((slot) => (
+                    <tr key={slot.id}>
+                      <td className="px-4 py-3 font-black text-slate-900">{slot.guest.fullName}</td>
+                      <td className="px-4 py-3 font-bold text-slate-700" dir="ltr">
+                        {slot.guest.phone}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-700">{getSlotLabel(slot)}</td>
+                      <td className="px-4 py-3 font-bold text-slate-700">
+                        {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-100">
+                          {Math.floor(getStayHours(slot.guest))} ساعت
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SlotModal({ slot, onClose, onCheckIn, onCheckOut, onUpdateGuest }) {
   const [form, setForm] = useState({
     fullName: "",
@@ -795,6 +861,7 @@ export default function App() {
   const [selectedSlotIds, setSelectedSlotIds] = useState([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [multiCheckInOpen, setMultiCheckInOpen] = useState(false);
+  const [longStayModalOpen, setLongStayModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
@@ -1074,20 +1141,6 @@ export default function App() {
     downloadExcel(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
-  const exportLongStayGuests = () => {
-    const headers = ["نام و نام خانوادگی", "شماره تماس", "جایگاه", "تاریخ ورود", "ساعت ورود", "مدت اقامت تقریبی"];
-    const rows = longStayGuests.map((slot) => [
-      slot.guest.fullName,
-      slot.guest.phone,
-      getSlotLabel(slot),
-      formatDate(slot.guest.checkInDate),
-      slot.guest.checkInTime,
-      `${Math.floor(getStayHours(slot.guest))} ساعت`
-    ]);
-
-    downloadExcel(`mokeb-long-stay-guests-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
-  };
-
   const openResetModal = () => {
     setResetPassword("");
     setResetError("");
@@ -1113,6 +1166,7 @@ export default function App() {
     setSelectedSlotIds([]);
     setMultiSelectMode(false);
     setMultiCheckInOpen(false);
+    setLongStayModalOpen(false);
     setQuery("");
     closeResetModal();
   };
@@ -1290,12 +1344,11 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={exportLongStayGuests}
-                disabled={longStayGuests.length === 0}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                onClick={() => setLongStayModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700"
               >
-                <Download className="h-4 w-4" />
-                اقامت بیش از ۲۴ ساعت ({longStayGuests.length})
+                <User className="h-4 w-4" />
+                نمایش اقامت بیش از ۲۴ ساعت ({longStayGuests.length})
               </button>
             </div>
           </div>
@@ -1370,6 +1423,11 @@ export default function App() {
         slots={selectedSlots}
         onClose={() => setMultiCheckInOpen(false)}
         onSubmit={(form) => handleCheckInMany(selectedSlotIds, form)}
+      />
+      <LongStayModal
+        open={longStayModalOpen}
+        slots={longStayGuests}
+        onClose={() => setLongStayModalOpen(false)}
       />
     </main>
     <PrintLabel slot={selectedSlot} />
