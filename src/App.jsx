@@ -672,13 +672,30 @@ export default function App() {
   };
 
   const downloadExcel = (filename, headers, rows) => {
-    const escapeCell = (value) =>
+    const escapeHtml = (value) =>
       String(value ?? "")
-        .replaceAll("\t", " ")
-        .replaceAll("\r", " ")
-        .replaceAll("\n", " ");
-    const table = [headers, ...rows].map((row) => row.map(escapeCell).join("\t")).join("\r\n");
-    const blob = new Blob([`\uFEFF${table}`], { type: "application/vnd.ms-excel;charset=utf-8" });
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    const makeCell = (value, tag = "td") =>
+      `<${tag} style="border:1px solid #999;padding:6px;mso-number-format:'\\@';">${escapeHtml(value)}</${tag}>`;
+    const headerRow = `<tr>${headers.map((header) => makeCell(header, "th")).join("")}</tr>`;
+    const bodyRows = rows.map((row) => `<tr>${row.map((cell) => makeCell(cell)).join("")}</tr>`).join("");
+    const html = `<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <table dir="rtl" style="border-collapse:collapse;font-family:Tahoma,Arial,sans-serif;">
+      <thead>${headerRow}</thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </body>
+</html>`;
+    const blob = new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -690,28 +707,22 @@ export default function App() {
   };
 
   const exportOccupiedGuests = () => {
-    const headers = ["نام و نام خانوادگی", "شماره تماس", "ردیف", "شماره جایگاه", "تاریخ ورود", "ساعت ورود"];
+    const headers = ["نام و نام خانوادگی", "شماره تماس", "تاریخ ورود"];
     const rows = occupiedGuests.map((slot) => [
       slot.guest.fullName,
       slot.guest.phone,
-      slot.row,
-      slot.number,
-      formatDate(slot.guest.checkInDate),
-      slot.guest.checkInTime
+      formatDate(slot.guest.checkInDate)
     ]);
 
     downloadExcel(`mokeb-current-guests-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
   const exportAllCheckIns = () => {
-    const headers = ["نام و نام خانوادگی", "شماره تماس", "ردیف", "شماره جایگاه", "تاریخ ورود", "ساعت ورود"];
+    const headers = ["نام و نام خانوادگی", "شماره تماس", "تاریخ ورود"];
     const rows = checkInEvents.map((event) => [
       event.guest.fullName,
       event.guest.phone,
-      event.slotId.split("-")[0],
-      event.slotId.split("-")[1],
-      formatDate(event.guest.checkInDate),
-      event.guest.checkInTime
+      formatDate(event.guest.checkInDate)
     ]);
 
     downloadExcel(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
