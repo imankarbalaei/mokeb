@@ -580,10 +580,14 @@ export default function App() {
     setSelectedSlotId(null);
   };
 
-  const downloadCsv = (filename, headers, rows) => {
-    const escapeCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-    const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\n");
-    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const downloadExcel = (filename, headers, rows) => {
+    const escapeCell = (value) =>
+      String(value ?? "")
+        .replaceAll("\t", " ")
+        .replaceAll("\r", " ")
+        .replaceAll("\n", " ");
+    const table = [headers, ...rows].map((row) => row.map(escapeCell).join("\t")).join("\r\n");
+    const blob = new Blob([`\uFEFF${table}`], { type: "application/vnd.ms-excel;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -605,7 +609,7 @@ export default function App() {
       slot.guest.checkInTime
     ]);
 
-    downloadCsv(`mokeb-current-guests-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    downloadExcel(`mokeb-current-guests-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
   const exportAllCheckIns = () => {
@@ -619,7 +623,7 @@ export default function App() {
       event.guest.checkInTime
     ]);
 
-    downloadCsv(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    downloadExcel(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
   return (
