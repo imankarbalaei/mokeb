@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bed,
   CalendarClock,
@@ -383,13 +383,24 @@ function ResetDataModal({ open, password, error, onPasswordChange, onClose, onCo
 }
 
 function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
-  const current = nowParts();
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
-    checkInDate: current.date,
-    checkInTime: current.time
+    checkInDate: "",
+    checkInTime: ""
   });
+
+  useEffect(() => {
+    if (slot?.status !== "available") return;
+
+    const current = nowParts();
+    setForm({
+      fullName: "",
+      phone: "",
+      checkInDate: current.date,
+      checkInTime: current.time
+    });
+  }, [slot?.id, slot?.status]);
 
   if (!slot) return null;
 
