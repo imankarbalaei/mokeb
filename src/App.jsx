@@ -891,7 +891,17 @@ export default function App() {
                 <Bed className="h-4 w-4" />
                 پنل مدیریت استراحتگاه
               </div>
-              <h1 className="text-3xl font-black tracking-tight md:text-5xl">{BRAND_NAME}</h1>
+              <div className="flex items-center gap-4">
+                <img
+                  src="/logo.png"
+                  alt="لوگوی موکب الشهدا قم"
+                  className="h-16 w-16 shrink-0 rounded-2xl bg-white/95 object-contain p-2 shadow-lg ring-1 ring-white/20 md:h-20 md:w-20"
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                  }}
+                />
+                <h1 className="text-3xl font-black tracking-tight md:text-5xl">{BRAND_NAME}</h1>
+              </div>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
                 مدیریت ورود، خروج، ظرفیت جایگاه‌ها و چاپ لیبل زائران برای ۵۴۰ جایگاه در ردیف‌های A تا I.
               </p>
