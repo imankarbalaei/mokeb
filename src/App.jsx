@@ -7,6 +7,7 @@ import {
   Edit3,
   LogIn,
   LogOut,
+  MousePointer2,
   Printer,
   Search,
   ShieldAlert,
@@ -252,11 +253,12 @@ function SearchResults({ query, results, onOpenSlot }) {
   );
 }
 
-function VisualGrid({ slots, onOpenSlot }) {
+function VisualGrid({ slots, selectedSlotIds, multiSelectMode, onSlotClick }) {
   const slotMap = useMemo(
     () => new Map(slots.map((slot) => [makeSlotId(slot.row, slot.number), slot])),
     [slots]
   );
+  const selectedSet = useMemo(() => new Set(selectedSlotIds), [selectedSlotIds]);
 
   return (
     <div className="max-h-[62vh] overflow-auto rounded-3xl border border-slate-200 bg-slate-50">
@@ -288,17 +290,21 @@ function VisualGrid({ slots, onOpenSlot }) {
               {ROWS.map((row) => {
                 const slot = slotMap.get(makeSlotId(row, number));
                 const occupied = slot?.status === "occupied";
+                const selected = selectedSet.has(slot.id);
                 return (
                   <td key={`${row}-${number}`} className="p-2">
                     <button
                       type="button"
-                      onClick={() => onOpenSlot(slot.id)}
+                      onClick={() => onSlotClick(slot)}
                       title={`${getSlotLabel(slot)} - ${occupied ? slot.guest?.fullName : "خالی"}`}
                       className={[
                         "flex h-9 w-full min-w-16 items-center justify-center rounded-xl text-xs font-black text-white shadow-sm transition hover:scale-105 focus:outline-none focus:ring-4",
-                        occupied
+                        selected
+                          ? "bg-blue-600 ring-4 ring-blue-200 hover:bg-blue-700 focus:ring-blue-200"
+                          : occupied
                           ? "bg-red-500 hover:bg-red-600 focus:ring-red-100"
-                          : "bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-100"
+                          : "bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-100",
+                        multiSelectMode && !occupied ? "cursor-pointer" : ""
                       ].join(" ")}
                     >
                       {getSlotShortLabel(slot)}
@@ -372,6 +378,132 @@ function ResetDataModal({ open, password, error, onPasswordChange, onClose, onCo
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MultiCheckInModal({ open, slots, onClose, onSubmit }) {
+  const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
+    checkInDate: "",
+    checkInTime: ""
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    const current = nowParts();
+    setForm({
+      fullName: "",
+      phone: "",
+      checkInDate: current.date,
+      checkInTime: current.time
+    });
+  }, [open]);
+
+  if (!open) return null;
+
+  const updateForm = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const submit = (event) => {
+    event.preventDefault();
+    onSubmit(form);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">ثبت ورود گروهی</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-900">{slots.length} جایگاه انتخاب شده</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            aria-label="بستن"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="space-y-5 p-6">
+          <div className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-bold leading-7 text-blue-700 ring-1 ring-blue-100">
+            این اطلاعات برای همه جایگاه‌های انتخاب‌شده ثبت می‌شود:
+            <div className="mt-2 flex flex-wrap gap-2">
+              {slots.map((slot) => (
+                <span key={slot.id} className="rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">
+                  {getSlotShortLabel(slot)}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="نام و نام خانوادگی">
+              <input
+                required
+                value={form.fullName}
+                onChange={(event) => updateForm("fullName", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                placeholder="مثلاً علی رضایی"
+              />
+            </Field>
+            <Field label="شماره تلفن">
+              <input
+                required
+                value={form.phone}
+                onChange={(event) => updateForm("phone", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                placeholder="مثلاً 09121234567"
+                inputMode="tel"
+                dir="ltr"
+              />
+            </Field>
+            <Field label="تاریخ ورود">
+              <input
+                required
+                type="date"
+                value={form.checkInDate}
+                onChange={(event) => updateForm("checkInDate", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                dir="ltr"
+              />
+            </Field>
+            <Field label="ساعت ورود">
+              <input
+                required
+                type="time"
+                value={form.checkInTime}
+                onChange={(event) => updateForm("checkInTime", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                dir="ltr"
+              />
+            </Field>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl bg-slate-100 px-5 py-3 font-black text-slate-700 transition hover:bg-slate-200"
+            >
+              انصراف
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+            >
+              <LogIn className="h-5 w-5" />
+              ثبت ورود برای همه
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -651,6 +783,9 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut, onUpdateGuest }) {
 export default function App() {
   const [state, setState] = useState(loadState);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [selectedSlotIds, setSelectedSlotIds] = useState([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [multiCheckInOpen, setMultiCheckInOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
@@ -659,6 +794,11 @@ export default function App() {
   const selectedSlot = useMemo(
     () => state.slots.find((slot) => slot.id === selectedSlotId),
     [selectedSlotId, state.slots]
+  );
+
+  const selectedSlots = useMemo(
+    () => selectedSlotIds.map((slotId) => state.slots.find((slot) => slot.id === slotId)).filter(Boolean),
+    [selectedSlotIds, state.slots]
   );
 
   const occupiedCount = useMemo(
@@ -732,6 +872,72 @@ export default function App() {
         ...prev.history
       ]
     }));
+  };
+
+  const handleCheckInMany = (slotIds, form) => {
+    const guest = {
+      fullName: form.fullName.trim(),
+      phone: form.phone.trim(),
+      checkInDate: form.checkInDate,
+      checkInTime: form.checkInTime
+    };
+
+    commitState((prev) => {
+      const availableIds = new Set(
+        slotIds.filter((slotId) => prev.slots.some((slot) => slot.id === slotId && slot.status === "available"))
+      );
+
+      if (availableIds.size === 0) return prev;
+
+      return {
+        ...prev,
+        slots: prev.slots.map((slot) =>
+          availableIds.has(slot.id)
+            ? {
+                ...slot,
+                status: "occupied",
+                guest
+              }
+            : slot
+        ),
+        history: [
+          ...Array.from(availableIds).map((slotId) => ({
+            id: crypto.randomUUID(),
+            type: "check-in",
+            slotId,
+            guest,
+            createdAt: new Date().toISOString()
+          })),
+          ...prev.history
+        ]
+      };
+    });
+
+    setSelectedSlotIds([]);
+    setMultiCheckInOpen(false);
+  };
+
+  const toggleMultiSelectMode = () => {
+    setMultiSelectMode((prev) => !prev);
+    setSelectedSlotIds([]);
+    setSelectedSlotId(null);
+    setMultiCheckInOpen(false);
+  };
+
+  const handleGridSlotClick = (slot) => {
+    if (!multiSelectMode) {
+      setSelectedSlotId(slot.id);
+      return;
+    }
+
+    if (slot.status === "occupied") {
+      setSelectedSlotId(slot.id);
+      return;
+    }
+
+    setSelectedSlotIds((prev) =>
+      prev.includes(slot.id) ? prev.filter((slotId) => slotId !== slot.id) : [...prev, slot.id]
+    );
   };
 
   const handleCheckOut = (slotId) => {
@@ -876,6 +1082,9 @@ export default function App() {
     saveState(initialState);
     setState(initialState);
     setSelectedSlotId(null);
+    setSelectedSlotIds([]);
+    setMultiSelectMode(false);
+    setMultiCheckInOpen(false);
     setQuery("");
     closeResetModal();
   };
@@ -958,9 +1167,57 @@ export default function App() {
             </div>
           </div>
 
+          <div className="mb-5 rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-black text-slate-800">انتخاب چندتایی جایگاه‌ها</p>
+                <p className="mt-1 text-xs font-bold leading-6 text-slate-500">
+                  در این حالت چند جایگاه خالی را انتخاب کنید و اطلاعات یکسان را یک‌بار برای همه ثبت کنید.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={toggleMultiSelectMode}
+                  className={[
+                    "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-black transition",
+                    multiSelectMode
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"
+                      : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
+                  ].join(" ")}
+                >
+                  <MousePointer2 className="h-4 w-4" />
+                  {multiSelectMode ? "حالت چندتایی فعال است" : "فعال‌سازی انتخاب چندتایی"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlotIds([])}
+                  disabled={selectedSlotIds.length === 0}
+                  className="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+                >
+                  پاک کردن انتخاب‌ها
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMultiCheckInOpen(true)}
+                  disabled={selectedSlotIds.length === 0}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                >
+                  <LogIn className="h-4 w-4" />
+                  ثبت ورود برای {selectedSlotIds.length} جایگاه
+                </button>
+              </div>
+            </div>
+          </div>
+
           <SearchResults query={query} results={searchResults} onOpenSlot={setSelectedSlotId} />
 
-          <VisualGrid slots={state.slots} onOpenSlot={setSelectedSlotId} />
+          <VisualGrid
+            slots={state.slots}
+            selectedSlotIds={selectedSlotIds}
+            multiSelectMode={multiSelectMode}
+            onSlotClick={handleGridSlotClick}
+          />
 
           <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold">
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-emerald-700 ring-1 ring-emerald-100">
@@ -1070,6 +1327,12 @@ export default function App() {
         }}
         onClose={closeResetModal}
         onConfirm={resetAllData}
+      />
+      <MultiCheckInModal
+        open={multiCheckInOpen}
+        slots={selectedSlots}
+        onClose={() => setMultiCheckInOpen(false)}
+        onSubmit={(form) => handleCheckInMany(selectedSlotIds, form)}
       />
     </main>
     <PrintLabel slot={selectedSlot} />
