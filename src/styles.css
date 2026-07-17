@@ -62,13 +62,10 @@ select {
 
 @media print {
   @page {
-    size: 34mm 51mm;
     margin: 0;
   }
 
   body {
-    width: 34mm;
-    height: 51mm;
     margin: 0;
     background: white !important;
   }
@@ -84,8 +81,9 @@ select {
 
   #print-label {
     display: block !important;
-    position: fixed !important;
-    inset: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
     width: 34mm !important;
     height: 51mm !important;
     margin: 0 !important;
