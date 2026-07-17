@@ -16,7 +16,7 @@ const createWindow = () => {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: false
     }
   });
 
@@ -45,29 +45,36 @@ ipcMain.handle("print-label", async (event) => {
   if (!senderWindow) return { ok: false, error: "پنجره چاپ پیدا نشد." };
 
   return new Promise((resolve) => {
-    senderWindow.webContents.print(
-      {
-        silent: false,
-        printBackground: true,
-        landscape: false,
-        pageSize: {
-          width: 100000,
-          height: 50000
+    try {
+      senderWindow.webContents.print(
+        {
+          silent: false,
+          printBackground: true,
+          landscape: false,
+          pageSize: {
+            width: 100000,
+            height: 50000
+          },
+          margins: {
+            marginType: "custom",
+            top: 10000,
+            bottom: 0,
+            left: 0,
+            right: 0
+          }
         },
-        margins: {
-          marginType: "custom",
-          top: 10000,
-          bottom: 0,
-          left: 0,
-          right: 0
+        (success, failureReason) => {
+          resolve({
+            ok: success,
+            error: success ? null : failureReason || "چاپ انجام نشد."
+          });
         }
-      },
-      (success, failureReason) => {
-        resolve({
-          ok: success,
-          error: success ? null : failureReason
-        });
-      }
-    );
+      );
+    } catch (error) {
+      resolve({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 });

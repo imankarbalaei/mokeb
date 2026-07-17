@@ -188,9 +188,14 @@ function PrintLabel({ slot }) {
 }
 
 async function printCurrentLabel() {
-  if (window.mokebPrint?.printLabel) {
-    await window.mokebPrint.printLabel();
-    return;
+  try {
+    if (window.mokebPrint?.printLabel) {
+      const result = await window.mokebPrint.printLabel();
+      if (result?.ok) return;
+      console.warn("Electron label print failed; falling back to window.print().", result?.error);
+    }
+  } catch (error) {
+    console.warn("Electron label print threw; falling back to window.print().", error);
   }
 
   window.print();
