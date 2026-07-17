@@ -3,6 +3,7 @@ import {
   Bed,
   CalendarClock,
   CheckCircle2,
+  Download,
   LogIn,
   LogOut,
   Printer,
@@ -48,6 +49,10 @@ function makeSlotId(row, number) {
 
 function getSlotLabel(slot) {
   return `ردیف ${slot.row} - جایگاه ${slot.number}`;
+}
+
+function getSlotShortLabel(slot) {
+  return `${slot.row}-${slot.number}`;
 }
 
 function createInitialSlots() {
@@ -129,26 +134,173 @@ function LabelPreview({ slot }) {
 
   return (
     <div
-      id="print-label"
-      className="mx-auto h-[1in] w-[2in] overflow-hidden rounded-xl border border-slate-300 bg-white p-[0.07in] text-black shadow-sm"
+      className="mx-auto h-[51mm] w-[34mm] overflow-hidden rounded-xl border border-slate-300 bg-white p-[2mm] text-black shadow-sm"
       dir="rtl"
     >
-      <div className="flex h-full gap-1.5">
-        <div className="flex min-w-0 flex-1 flex-col justify-between">
-          <div>
-            <div className="truncate text-[10px] font-black leading-tight">{BRAND_NAME}</div>
-            <div className="mt-1 truncate text-[8px] font-bold leading-tight">{slot.guest.fullName}</div>
-            <div className="mt-0.5 truncate text-[7px] leading-tight">{getSlotLabel(slot)}</div>
-          </div>
+      <div className="flex h-full flex-col justify-between gap-1">
+        <div>
+          <div className="truncate text-center text-[10px] font-black leading-tight">{BRAND_NAME}</div>
+          <div className="mt-1 truncate text-center text-[9px] font-black leading-tight">{slot.guest.fullName}</div>
+        </div>
+
+        <div className="mx-auto flex h-[18mm] w-[18mm] items-center justify-center">
+          <div className="qr-placeholder h-[16mm] w-[16mm] rounded-sm border border-black bg-white" />
+        </div>
+
+        <div className="space-y-0.5 text-center">
+          <div className="text-[8px] font-black leading-tight">{getSlotLabel(slot)}</div>
           <div className="text-[6.5px] leading-tight">
             ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
           </div>
-        </div>
-        <div className="flex w-[0.62in] shrink-0 flex-col items-center justify-between">
-          <div className="qr-placeholder h-[0.52in] w-[0.52in] rounded-sm border border-black bg-white" />
-          <div className="barcode-bars h-[0.14in] w-full" />
+          <div className="barcode-bars mx-auto h-[4mm] w-[26mm]" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function PrintLabel({ slot }) {
+  if (!slot?.guest) return null;
+
+  return (
+    <div id="print-label" dir="rtl">
+      <div className="print-label-content">
+        <div>
+          <div className="print-label-brand">{BRAND_NAME}</div>
+          <div className="print-label-name">{slot.guest.fullName}</div>
+        </div>
+        <div className="print-label-qr qr-placeholder" />
+        <div>
+          <div className="print-label-slot">{getSlotLabel(slot)}</div>
+          <div className="print-label-time">
+            ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+          </div>
+          <div className="print-label-barcode barcode-bars" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SearchResults({ query, results, onOpenSlot }) {
+  const normalizedQuery = query.trim();
+
+  if (!normalizedQuery) {
+    return null;
+  }
+
+  return (
+    <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-base font-black text-slate-900">نتایج جستجو</h3>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
+          {results.length} نتیجه
+        </span>
+      </div>
+
+      {results.length === 0 ? (
+        <p className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 ring-1 ring-slate-200">
+          نتیجه‌ای برای «{normalizedQuery}» پیدا نشد.
+        </p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {results.map((slot) => {
+            const occupied = slot.status === "occupied";
+            return (
+              <button
+                key={slot.id}
+                type="button"
+                onClick={() => onOpenSlot(slot.id)}
+                className="rounded-2xl bg-white p-4 text-right shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span
+                    className={[
+                      "rounded-full px-3 py-1 text-xs font-black",
+                      occupied ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                    ].join(" ")}
+                  >
+                    {occupied ? "اشغال" : "خالی"}
+                  </span>
+                  <span className="font-black text-slate-900">{getSlotLabel(slot)}</span>
+                </div>
+                {slot.guest ? (
+                  <div className="mt-3 space-y-1">
+                    <p className="truncate text-sm font-black text-slate-800">{slot.guest.fullName}</p>
+                    <p className="text-sm font-bold text-slate-500" dir="ltr">
+                      {slot.guest.phone}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm font-bold text-slate-500">بدون زائر ثبت‌شده</p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VisualGrid({ slots, onOpenSlot }) {
+  const slotMap = useMemo(
+    () => new Map(slots.map((slot) => [makeSlotId(slot.row, slot.number), slot])),
+    [slots]
+  );
+
+  return (
+    <div className="max-h-[62vh] overflow-auto rounded-3xl border border-slate-200 bg-slate-50">
+      <table className="slot-table min-w-[760px] border-separate border-spacing-0 p-4 text-center">
+        <thead>
+          <tr>
+            <th className="sticky right-0 top-0 z-30 w-16 bg-slate-50 p-2">
+              <div className="flex h-10 items-center justify-center rounded-2xl bg-slate-900 text-xs font-black text-white">
+                شماره
+              </div>
+            </th>
+            {ROWS.map((row) => (
+              <th key={row} className="sticky top-0 z-20 bg-slate-50 p-2">
+                <div className="flex h-10 items-center justify-center rounded-2xl bg-slate-900 text-lg font-black text-white">
+                  {row}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: SLOTS_PER_ROW }, (_, index) => index + 1).map((number) => (
+            <tr key={number}>
+              <th className="sticky right-0 z-10 bg-slate-50 p-2">
+                <div className="flex h-9 items-center justify-center rounded-xl bg-white text-sm font-black text-slate-700 ring-1 ring-slate-200">
+                  {number}
+                </div>
+              </th>
+              {ROWS.map((row) => {
+                const slot = slotMap.get(makeSlotId(row, number));
+                const occupied = slot?.status === "occupied";
+                return (
+                  <td key={`${row}-${number}`} className="p-2">
+                    <button
+                      type="button"
+                      onClick={() => onOpenSlot(slot.id)}
+                      title={`${getSlotLabel(slot)} - ${occupied ? slot.guest?.fullName : "خالی"}`}
+                      className={[
+                        "flex h-9 w-full min-w-16 items-center justify-center rounded-xl text-xs font-black text-white shadow-sm transition hover:scale-105 focus:outline-none focus:ring-4",
+                        occupied
+                          ? "bg-red-500 hover:bg-red-600 focus:ring-red-100"
+                          : "bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-100"
+                      ].join(" ")}
+                    >
+                      {getSlotShortLabel(slot)}
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -176,7 +328,7 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
   const isOccupied = slot.status === "occupied" && slot.guest;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm no-print">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div>
@@ -281,7 +433,7 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
               </div>
 
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4">
-                <p className="mb-3 text-sm font-black text-slate-700">پیش‌نمایش لیبل حرارتی ۲×۱ اینچ</p>
+                <p className="mb-3 text-sm font-black text-slate-700">پیش‌نمایش لیبل حرارتی ۳۴×۵۱ میلی‌متر</p>
                 <LabelPreview slot={slot} />
               </div>
 
@@ -326,24 +478,33 @@ export default function App() {
     [state.slots]
   );
 
-  const filteredSlotsByRow = useMemo(() => {
+  const searchResults = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return ROWS.map((row) => ({
-      row,
-      slots: state.slots.filter((slot) => {
-        if (slot.row !== row) return false;
-        if (!normalizedQuery) return true;
-        const guestText = slot.guest
-          ? `${slot.guest.fullName} ${slot.guest.phone}`.toLowerCase()
-          : "";
-        return (
-          slot.id.toLowerCase().includes(normalizedQuery) ||
-          `${slot.row}${slot.number}`.toLowerCase().includes(normalizedQuery) ||
-          guestText.includes(normalizedQuery)
-        );
-      })
-    }));
+    if (!normalizedQuery) return [];
+
+    return state.slots.filter((slot) => {
+      const guestText = slot.guest
+        ? `${slot.guest.fullName} ${slot.guest.phone}`.toLowerCase()
+        : "";
+
+      return (
+        slot.id.toLowerCase().includes(normalizedQuery) ||
+        `${slot.row}${slot.number}`.toLowerCase().includes(normalizedQuery) ||
+        `${slot.number}`.includes(normalizedQuery) ||
+        guestText.includes(normalizedQuery)
+      );
+    });
   }, [query, state.slots]);
+
+  const occupiedGuests = useMemo(
+    () => state.slots.filter((slot) => slot.status === "occupied" && slot.guest),
+    [state.slots]
+  );
+
+  const checkInEvents = useMemo(
+    () => state.history.filter((event) => event.type === "check-in"),
+    [state.history]
+  );
 
   const commitState = (updater) => {
     setState((prev) => {
@@ -419,8 +580,51 @@ export default function App() {
     setSelectedSlotId(null);
   };
 
+  const downloadCsv = (filename, headers, rows) => {
+    const escapeCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportOccupiedGuests = () => {
+    const headers = ["نام و نام خانوادگی", "شماره تماس", "ردیف", "شماره جایگاه", "تاریخ ورود", "ساعت ورود"];
+    const rows = occupiedGuests.map((slot) => [
+      slot.guest.fullName,
+      slot.guest.phone,
+      slot.row,
+      slot.number,
+      formatDate(slot.guest.checkInDate),
+      slot.guest.checkInTime
+    ]);
+
+    downloadCsv(`mokeb-current-guests-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+  };
+
+  const exportAllCheckIns = () => {
+    const headers = ["نام و نام خانوادگی", "شماره تماس", "ردیف", "شماره جایگاه", "تاریخ ورود", "ساعت ورود"];
+    const rows = checkInEvents.map((event) => [
+      event.guest.fullName,
+      event.guest.phone,
+      event.slotId.split("-")[0],
+      event.slotId.split("-")[1],
+      formatDate(event.guest.checkInDate),
+      event.guest.checkInTime
+    ]);
+
+    downloadCsv(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+  };
+
   return (
-    <main className="min-h-screen p-4 sm:p-6 lg:p-8 no-print">
+    <>
+    <main className="min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-7 text-white shadow-soft md:px-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -453,7 +657,7 @@ export default function App() {
             <div>
               <h2 className="text-2xl font-black text-slate-900">جدول ویژوالی جایگاه‌ها</h2>
               <p className="mt-1 text-sm text-slate-500">
-                سبز یعنی خالی، قرمز یعنی اشغال. برای ثبت ورود یا خروج روی هر جایگاه کلیک کنید.
+                ستون‌ها ردیف‌های A تا I هستند و سطرها شماره جایگاه ۱ تا ۶۰. با اسکرول، عنوان ستون‌ها ثابت می‌ماند.
               </p>
             </div>
             <div className="relative w-full lg:w-96">
@@ -467,41 +671,9 @@ export default function App() {
             </div>
           </div>
 
-          <div className="max-h-[62vh] overflow-auto rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="min-w-[980px] space-y-4">
-              {filteredSlotsByRow.map(({ row, slots }) => (
-                <div key={row} className="grid grid-cols-[48px_1fr] items-center gap-3">
-                  <div className="flex h-10 items-center justify-center rounded-2xl bg-slate-900 text-lg font-black text-white">
-                    {row}
-                  </div>
-                  <div
-                    className="slot-grid grid gap-1.5"
-                    style={{ gridTemplateColumns: "repeat(60, minmax(0, 1fr))" }}
-                  >
-                    {slots.map((slot) => {
-                      const occupied = slot.status === "occupied";
-                      return (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => setSelectedSlotId(slot.id)}
-                          title={`${getSlotLabel(slot)} - ${occupied ? slot.guest?.fullName : "خالی"}`}
-                          className={[
-                            "flex h-8 items-center justify-center rounded-lg text-xs font-black text-white shadow-sm transition hover:scale-110 focus:outline-none focus:ring-4",
-                            occupied
-                              ? "bg-red-500 hover:bg-red-600 focus:ring-red-100"
-                              : "bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-100"
-                          ].join(" ")}
-                        >
-                          {slot.number}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <SearchResults query={query} results={searchResults} onOpenSlot={setSelectedSlotId} />
+
+          <VisualGrid slots={state.slots} onOpenSlot={setSelectedSlotId} />
 
           <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold">
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-emerald-700 ring-1 ring-emerald-100">
@@ -520,9 +692,31 @@ export default function App() {
         </section>
 
         <section className="mt-6 rounded-[2rem] bg-white p-5 shadow-soft ring-1 ring-slate-200/70">
-          <div className="mb-4 flex items-center gap-2">
-            <User className="h-5 w-5 text-teal-600" />
-            <h2 className="text-xl font-black text-slate-900">آخرین رویدادها</h2>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-teal-600" />
+              <h2 className="text-xl font-black text-slate-900">آخرین رویدادها</h2>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={exportAllCheckIns}
+                disabled={checkInEvents.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-teal-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                <Download className="h-4 w-4" />
+                خروجی همه ورودها
+              </button>
+              <button
+                type="button"
+                onClick={exportOccupiedGuests}
+                disabled={occupiedGuests.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                <Download className="h-4 w-4" />
+                خروجی افراد حاضر
+              </button>
+            </div>
           </div>
           {state.history.length === 0 ? (
             <p className="rounded-2xl bg-slate-50 p-4 text-sm font-medium text-slate-500">
@@ -579,5 +773,7 @@ export default function App() {
         onCheckOut={handleCheckOut}
       />
     </main>
+    <PrintLabel slot={selectedSlot} />
+    </>
   );
 }

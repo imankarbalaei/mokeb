@@ -56,15 +56,19 @@ select {
     repeating-linear-gradient(45deg, transparent 0 7px, rgba(17, 24, 39, 0.9) 7px 10px);
 }
 
+#print-label {
+  display: none;
+}
+
 @media print {
   @page {
-    size: 2in 1in;
+    size: 34mm 51mm;
     margin: 0;
   }
 
   body {
-    width: 2in;
-    height: 1in;
+    width: 34mm;
+    height: 51mm;
     margin: 0;
     background: white !important;
   }
@@ -79,12 +83,13 @@ select {
   }
 
   #print-label {
+    display: block !important;
     position: fixed !important;
     inset: 0 !important;
-    width: 2in !important;
-    height: 1in !important;
+    width: 34mm !important;
+    height: 51mm !important;
     margin: 0 !important;
-    padding: 0.07in !important;
+    padding: 2mm !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -92,6 +97,64 @@ select {
     color: black !important;
     overflow: hidden !important;
     direction: rtl !important;
+  }
+
+  .print-label-content {
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 1mm !important;
+    text-align: center !important;
+    font-family: Tahoma, Arial, sans-serif !important;
+  }
+
+  .print-label-brand {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    font-weight: 900 !important;
+  }
+
+  .print-label-name {
+    max-width: 100% !important;
+    margin-top: 1mm !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+    font-weight: 900 !important;
+  }
+
+  .print-label-qr {
+    width: 16mm !important;
+    height: 16mm !important;
+    margin: 0 auto !important;
+    border: 1px solid black !important;
+    background-color: white !important;
+  }
+
+  .print-label-slot {
+    font-size: 8px !important;
+    line-height: 1.15 !important;
+    font-weight: 900 !important;
+  }
+
+  .print-label-time {
+    margin-top: 0.5mm !important;
+    font-size: 6.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .print-label-barcode {
+    width: 26mm !important;
+    height: 4mm !important;
+    margin: 1mm auto 0 !important;
   }
 
   .no-print {
