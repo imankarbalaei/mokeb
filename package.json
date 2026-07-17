@@ -31,6 +31,7 @@
       "target": [
         "portable"
       ],
+      "icon": "build/icon.ico",
       "artifactName": "Mokeb-Al-Shohada-Qom-${version}-win-${arch}.${ext}",
       "requestedExecutionLevel": "asInvoker",
       "signAndEditExecutable": false
