@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Download,
+  Edit3,
   LogIn,
   LogOut,
   Printer,
@@ -376,8 +377,15 @@ function ResetDataModal({ open, password, error, onPasswordChange, onClose, onCo
   );
 }
 
-function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
+function SlotModal({ slot, onClose, onCheckIn, onCheckOut, onUpdateGuest }) {
   const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
+    checkInDate: "",
+    checkInTime: ""
+  });
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
     fullName: "",
     phone: "",
     checkInDate: "",
@@ -394,7 +402,20 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
       checkInDate: current.date,
       checkInTime: current.time
     });
+    setEditing(false);
   }, [slot?.id, slot?.status]);
+
+  useEffect(() => {
+    if (!slot?.guest) return;
+
+    setEditForm({
+      fullName: slot.guest.fullName || "",
+      phone: slot.guest.phone || "",
+      checkInDate: slot.guest.checkInDate || "",
+      checkInTime: slot.guest.checkInTime || ""
+    });
+    setEditing(false);
+  }, [slot?.id, slot?.guest]);
 
   if (!slot) return null;
 
@@ -405,6 +426,16 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
   const submit = (event) => {
     event.preventDefault();
     onCheckIn(slot.id, form);
+  };
+
+  const updateEditForm = (key, value) => {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const submitEdit = (event) => {
+    event.preventDefault();
+    onUpdateGuest(slot.id, editForm);
+    setEditing(false);
   };
 
   const isOccupied = slot.status === "occupied" && slot.guest;
@@ -491,28 +522,100 @@ function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
                 این جایگاه اشغال است.
               </div>
 
-              <div className="grid gap-4 rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-bold text-slate-500">نام زائر</p>
-                  <p className="mt-1 text-lg font-black text-slate-900">{slot.guest.fullName}</p>
+              {!editing ? (
+                <div className="space-y-4">
+                  <div className="grid gap-4 rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200 md:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-bold text-slate-500">نام زائر</p>
+                      <p className="mt-1 text-lg font-black text-slate-900">{slot.guest.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-500">شماره تلفن</p>
+                      <p className="mt-1 text-lg font-black text-slate-900" dir="ltr">
+                        {slot.guest.phone}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-500">زمان ورود</p>
+                      <p className="mt-1 text-lg font-black text-slate-900">
+                        {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-500">جایگاه</p>
+                      <p className="mt-1 text-lg font-black text-slate-900">{getSlotLabel(slot)}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+                  >
+                    <Edit3 className="h-5 w-5" />
+                    ویرایش اطلاعات این جایگاه
+                  </button>
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500">شماره تلفن</p>
-                  <p className="mt-1 text-lg font-black text-slate-900" dir="ltr">
-                    {slot.guest.phone}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500">زمان ورود</p>
-                  <p className="mt-1 text-lg font-black text-slate-900">
-                    {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500">جایگاه</p>
-                  <p className="mt-1 text-lg font-black text-slate-900">{getSlotLabel(slot)}</p>
-                </div>
-              </div>
+              ) : (
+                <form onSubmit={submitEdit} className="space-y-4 rounded-3xl bg-blue-50 p-5 ring-1 ring-blue-100">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="نام و نام خانوادگی">
+                      <input
+                        required
+                        value={editForm.fullName}
+                        onChange={(event) => updateEditForm("fullName", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                      />
+                    </Field>
+                    <Field label="شماره تلفن">
+                      <input
+                        required
+                        value={editForm.phone}
+                        onChange={(event) => updateEditForm("phone", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        inputMode="tel"
+                        dir="ltr"
+                      />
+                    </Field>
+                    <Field label="تاریخ ورود">
+                      <input
+                        required
+                        type="date"
+                        value={editForm.checkInDate}
+                        onChange={(event) => updateEditForm("checkInDate", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        dir="ltr"
+                      />
+                    </Field>
+                    <Field label="ساعت ورود">
+                      <input
+                        required
+                        type="time"
+                        value={editForm.checkInTime}
+                        onChange={(event) => updateEditForm("checkInTime", event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                        dir="ltr"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(false)}
+                      className="rounded-2xl bg-white px-5 py-3 font-black text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+                    >
+                      انصراف
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-2xl bg-blue-600 px-5 py-3 font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+                    >
+                      ذخیره تغییرات
+                    </button>
+                  </div>
+                </form>
+              )}
 
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-4">
                 <p className="mb-3 text-sm font-black text-slate-700">پیش‌نمایش لیبل حرارتی ۳۴×۵۱ میلی‌متر</p>
@@ -663,6 +766,35 @@ export default function App() {
       };
     });
     setSelectedSlotId(null);
+  };
+
+  const handleUpdateGuest = (slotId, form) => {
+    const guest = {
+      fullName: form.fullName.trim(),
+      phone: form.phone.trim(),
+      checkInDate: form.checkInDate,
+      checkInTime: form.checkInTime
+    };
+
+    commitState((prev) => ({
+      ...prev,
+      slots: prev.slots.map((slot) =>
+        slot.id === slotId && slot.guest
+          ? {
+              ...slot,
+              guest
+            }
+          : slot
+      ),
+      history: prev.history.map((event) =>
+        event.type === "check-in" && event.slotId === slotId
+          ? {
+              ...event,
+              guest
+            }
+          : event
+      )
+    }));
   };
 
   const downloadExcel = (filename, headers, rows) => {
@@ -916,6 +1048,7 @@ export default function App() {
         onClose={() => setSelectedSlotId(null)}
         onCheckIn={handleCheckIn}
         onCheckOut={handleCheckOut}
+        onUpdateGuest={handleUpdateGuest}
       />
       <ResetDataModal
         open={resetModalOpen}
