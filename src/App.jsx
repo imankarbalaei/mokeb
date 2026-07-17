@@ -47,6 +47,15 @@ function formatTimestamp(date, time) {
   return `${formatDate(date)} - ${time || "—"}`;
 }
 
+function getStayHours(guest) {
+  if (!guest?.checkInDate || !guest?.checkInTime) return 0;
+
+  const checkInTime = new Date(`${guest.checkInDate}T${guest.checkInTime}:00`).getTime();
+  if (Number.isNaN(checkInTime)) return 0;
+
+  return Math.max(0, (Date.now() - checkInTime) / (1000 * 60 * 60));
+}
+
 function makeSlotId(row, number) {
   return `${row}-${number}`;
 }
@@ -834,6 +843,11 @@ export default function App() {
     [state.history]
   );
 
+  const longStayGuests = useMemo(
+    () => occupiedGuests.filter((slot) => getStayHours(slot.guest) >= 24),
+    [occupiedGuests]
+  );
+
   const commitState = (updater) => {
     setState((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
@@ -1060,6 +1074,20 @@ export default function App() {
     downloadExcel(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
+  const exportLongStayGuests = () => {
+    const headers = ["نام و نام خانوادگی", "شماره تماس", "جایگاه", "تاریخ ورود", "ساعت ورود", "مدت اقامت تقریبی"];
+    const rows = longStayGuests.map((slot) => [
+      slot.guest.fullName,
+      slot.guest.phone,
+      getSlotLabel(slot),
+      formatDate(slot.guest.checkInDate),
+      slot.guest.checkInTime,
+      `${Math.floor(getStayHours(slot.guest))} ساعت`
+    ]);
+
+    downloadExcel(`mokeb-long-stay-guests-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
+  };
+
   const openResetModal = () => {
     setResetPassword("");
     setResetError("");
@@ -1259,6 +1287,15 @@ export default function App() {
               >
                 <Download className="h-4 w-4" />
                 خروجی افراد حاضر
+              </button>
+              <button
+                type="button"
+                onClick={exportLongStayGuests}
+                disabled={longStayGuests.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              >
+                <Download className="h-4 w-4" />
+                اقامت بیش از ۲۴ ساعت ({longStayGuests.length})
               </button>
             </div>
           </div>
