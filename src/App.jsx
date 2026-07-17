@@ -136,25 +136,26 @@ function LabelPreview({ slot }) {
 
   return (
     <div
-      className="mx-auto h-[51mm] w-[34mm] overflow-hidden rounded-xl border border-slate-300 bg-white p-[2mm] text-black shadow-sm"
+      className="mx-auto h-[34mm] w-[51mm] overflow-hidden rounded-xl border border-slate-300 bg-white p-[2mm] text-black shadow-sm"
       dir="rtl"
     >
-      <div className="flex h-full flex-col justify-between gap-1">
-        <div>
-          <div className="truncate text-center text-[10px] font-black leading-tight">{BRAND_NAME}</div>
-          <div className="mt-1 truncate text-center text-[9px] font-black leading-tight">{slot.guest.fullName}</div>
-        </div>
-
-        <div className="mx-auto flex h-[18mm] w-[18mm] items-center justify-center">
-          <div className="qr-placeholder h-[16mm] w-[16mm] rounded-sm border border-black bg-white" />
-        </div>
-
-        <div className="space-y-0.5 text-center">
-          <div className="text-[8px] font-black leading-tight">{getSlotLabel(slot)}</div>
-          <div className="text-[6.5px] leading-tight">
-            ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+      <div className="flex h-full gap-2">
+        <div className="flex min-w-0 flex-1 flex-col justify-between text-right">
+          <div>
+            <div className="truncate text-[14px] font-black leading-tight">{BRAND_NAME}</div>
+            <div className="mt-1 truncate text-[13px] font-black leading-tight">{slot.guest.fullName}</div>
+            <div className="mt-1 text-[10px] font-black leading-tight">{getSlotLabel(slot)}</div>
           </div>
-          <div className="barcode-bars mx-auto h-[4mm] w-[26mm]" />
+          <div>
+            <div className="text-[8px] font-bold leading-tight">
+              ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+            </div>
+            <div className="barcode-bars mt-1 h-[4mm] w-[30mm]" />
+          </div>
+        </div>
+
+        <div className="flex w-[18mm] shrink-0 items-center justify-center">
+          <div className="qr-placeholder h-[17mm] w-[17mm] rounded-sm border border-black bg-white" />
         </div>
       </div>
     </div>
@@ -167,18 +168,20 @@ function PrintLabel({ slot }) {
   return (
     <div id="print-label" dir="rtl">
       <div className="print-label-content">
-        <div>
-          <div className="print-label-brand">{BRAND_NAME}</div>
-          <div className="print-label-name">{slot.guest.fullName}</div>
+        <div className="print-label-text">
+          <div>
+            <div className="print-label-brand">{BRAND_NAME}</div>
+            <div className="print-label-name">{slot.guest.fullName}</div>
+            <div className="print-label-slot">{getSlotLabel(slot)}</div>
+          </div>
+          <div>
+            <div className="print-label-time">
+              ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
+            </div>
+            <div className="print-label-barcode barcode-bars" />
+          </div>
         </div>
         <div className="print-label-qr qr-placeholder" />
-        <div>
-          <div className="print-label-slot">{getSlotLabel(slot)}</div>
-          <div className="print-label-time">
-            ورود: {formatTimestamp(slot.guest.checkInDate, slot.guest.checkInTime)}
-          </div>
-          <div className="print-label-barcode barcode-bars" />
-        </div>
       </div>
     </div>
   );
