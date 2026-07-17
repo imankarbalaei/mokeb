@@ -8,6 +8,8 @@ import {
   LogOut,
   Printer,
   Search,
+  ShieldAlert,
+  Trash2,
   User,
   Users,
   X
@@ -305,6 +307,69 @@ function VisualGrid({ slots, onOpenSlot }) {
   );
 }
 
+function ResetDataModal({ open, password, error, onPasswordChange, onClose, onConfirm }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-red-50 p-3 text-red-600 ring-1 ring-red-100">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900">حذف کل اطلاعات</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500">این عملیات قابل بازگشت نیست.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-6">
+          <p className="rounded-2xl bg-red-50 p-4 text-sm font-bold leading-7 text-red-700 ring-1 ring-red-100">
+            با تأیید، تمام جایگاه‌ها خالی می‌شوند و کل تاریخچه ورود و خروج حذف می‌شود.
+          </p>
+
+          <Field label="رمز حذف اطلاعات">
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => onPasswordChange(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
+              placeholder="رمز را وارد کنید"
+              autoFocus
+            />
+          </Field>
+
+          {error ? (
+            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-black text-red-700 ring-1 ring-red-100">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl bg-slate-100 px-5 py-3 font-black text-slate-700 transition hover:bg-slate-200"
+            >
+              انصراف
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 font-black text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700"
+            >
+              <Trash2 className="h-5 w-5" />
+              حذف و ریست کامل
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SlotModal({ slot, onClose, onCheckIn, onCheckOut }) {
   const current = nowParts();
   const [form, setForm] = useState({
@@ -467,6 +532,9 @@ export default function App() {
   const [state, setState] = useState(loadState);
   const [selectedSlotId, setSelectedSlotId] = useState(null);
   const [query, setQuery] = useState("");
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetError, setResetError] = useState("");
 
   const selectedSlot = useMemo(
     () => state.slots.find((slot) => slot.id === selectedSlotId),
@@ -626,6 +694,32 @@ export default function App() {
     downloadExcel(`mokeb-all-checkins-${new Date().toISOString().slice(0, 10)}.xls`, headers, rows);
   };
 
+  const openResetModal = () => {
+    setResetPassword("");
+    setResetError("");
+    setResetModalOpen(true);
+  };
+
+  const closeResetModal = () => {
+    setResetModalOpen(false);
+    setResetPassword("");
+    setResetError("");
+  };
+
+  const resetAllData = () => {
+    if (resetPassword !== "mokeb123") {
+      setResetError("رمز واردشده درست نیست.");
+      return;
+    }
+
+    const initialState = { slots: createInitialSlots(), history: [] };
+    saveState(initialState);
+    setState(initialState);
+    setSelectedSlotId(null);
+    setQuery("");
+    closeResetModal();
+  };
+
   return (
     <>
     <main className="min-h-screen p-4 sm:p-6 lg:p-8">
@@ -654,6 +748,25 @@ export default function App() {
           <StatCard title="کل جایگاه‌ها" value={TOTAL_SLOTS} icon={Bed} tone="blue" />
           <StatCard title="جایگاه‌های اشغال" value={occupiedCount} icon={Users} tone="red" />
           <StatCard title="جایگاه‌های خالی" value={TOTAL_SLOTS - occupiedCount} icon={CheckCircle2} tone="green" />
+        </section>
+
+        <section className="mb-6 rounded-[2rem] border border-red-100 bg-white p-5 shadow-soft">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-black text-slate-900">مدیریت اطلاعات</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500">
+                برای شروع روز جدید یا پاک‌سازی کامل، می‌توانید همه داده‌های ذخیره‌شده را با رمز حذف کنید.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openResetModal}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 font-black text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700"
+            >
+              <Trash2 className="h-5 w-5" />
+              حذف کل اطلاعات
+            </button>
+          </div>
         </section>
 
         <section className="rounded-[2rem] bg-white p-5 shadow-soft ring-1 ring-slate-200/70">
@@ -775,6 +888,17 @@ export default function App() {
         onClose={() => setSelectedSlotId(null)}
         onCheckIn={handleCheckIn}
         onCheckOut={handleCheckOut}
+      />
+      <ResetDataModal
+        open={resetModalOpen}
+        password={resetPassword}
+        error={resetError}
+        onPasswordChange={(value) => {
+          setResetPassword(value);
+          setResetError("");
+        }}
+        onClose={closeResetModal}
+        onConfirm={resetAllData}
       />
     </main>
     <PrintLabel slot={selectedSlot} />
